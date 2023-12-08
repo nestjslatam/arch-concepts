@@ -1,7 +1,11 @@
 export class AlarmSeverity {
   constructor(readonly value: 'critical' | 'high' | 'medium' | 'low') {}
 
-  equals(other: AlarmSeverity): boolean {
-    return this.value === other.value;
+  equals(severity: AlarmSeverity) {
+    return this.value === severity.value;
+  }
+
+  toJSON() {
+    return this.value;
   }
 }

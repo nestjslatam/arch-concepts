@@ -1,24 +1,22 @@
-import { AlarmCreatedEvent } from './../../domain/events/alarm-created.event';
-import { CommandHandler, EventBus, ICommandHandler } from '@nestjs/cqrs';
+import { CommandHandler, EventPublisher, ICommandHandler } from '@nestjs/cqrs';
 import { Logger } from '@nestjs/common';
 
 import { AlarmFactory } from './../../domain/factories/alarm.factorie';
 import { CreateAlarmCommand } from './create-alarm.command';
-import { CreateAlarmRepository } from '../ports/create-alarm.repository';
+import { Alarm } from 'src/alarms/domain/alarm';
 
 @CommandHandler(CreateAlarmCommand)
 export class CreateAlarmCommandHandler
   implements ICommandHandler<CreateAlarmCommand>
 {
   constructor(
-    private readonly alarmRepository: CreateAlarmRepository,
+    private readonly eventPublisher: EventPublisher,
     private readonly alarmfactory: AlarmFactory,
-    private readonly eventBus: EventBus,
   ) {}
 
   private readonly logger = new Logger(CreateAlarmCommandHandler.name);
 
-  execute(command: CreateAlarmCommand): Promise<any> {
+  async execute(command: CreateAlarmCommand): Promise<Alarm> {
     this.logger.debug(`Received command ${command.constructor.name}`);
 
     const alarm = this.alarmfactory.create(
@@ -28,8 +26,10 @@ export class CreateAlarmCommandHandler
       command.items,
     );
 
-    this.eventBus.publish(new AlarmCreatedEvent(alarm));
+    this.eventPublisher.mergeObjectContext(alarm);
 
-    return this.alarmRepository.save(alarm);
+    alarm.commit();
+
+    return alarm;
   }
 }
